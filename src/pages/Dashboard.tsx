@@ -1,13 +1,14 @@
 import { useNavigate } from "react-router-dom";
 import MobileLayout from "@/components/MobileLayout";
 import BottomNav from "@/components/BottomNav";
-import { Bell, Droplets, Thermometer, Wind, ChevronRight, Zap, MapPin, Loader2, Power, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { Bell, Droplets, Thermometer, Wind, ChevronRight, Zap, MapPin, Loader2, Power, AlertTriangle, CheckCircle2, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { usePlantData } from "@/hooks/use-plant-data";
 import { useLocation } from "@/hooks/use-location";
 import { useLanguage } from "@/hooks/use-language";
 import { getCropById } from "@/lib/crops";
 import plantFallback from "@/assets/plant-ficus.png";
+import logo from "@/assets/smartgrow-logo.png";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -18,7 +19,7 @@ const Dashboard = () => {
 
   const cropId = data.type || localStorage.getItem("selectedCrop") || "";
   const crop = getCropById(cropId);
-  const cropName = crop ? t(crop.nameKey) : "Plant";
+  const cropName = crop ? t(crop.nameKey) : t("plant");
   const cropImage = crop?.image || plantFallback;
   const threshold = data.threshold ?? crop?.threshold ?? 50;
 
@@ -35,18 +36,21 @@ const Dashboard = () => {
   return (
     <MobileLayout>
       <div className="px-5 pt-6 pb-24">
-        {/* Header */}
+        {/* Header with Logo */}
         <div className="flex items-center justify-between mb-6">
-          <div>
-            <p className="text-muted-foreground text-sm">{t("hello")}</p>
-            <h1 className="text-xl font-bold text-foreground">{userName} 👋</h1>
+          <div className="flex items-center gap-3">
+            <img src={logo} alt="SmartGrow" className="w-9 h-9 rounded-xl object-contain" />
+            <div>
+              <p className="text-muted-foreground text-xs">{t("hello")}</p>
+              <h1 className="text-lg font-bold text-foreground leading-tight">{userName} 👋</h1>
+            </div>
           </div>
           <button
             onClick={() => navigate("/notifications")}
             className="w-10 h-10 rounded-full bg-card flex items-center justify-center shadow-sm border border-border relative"
           >
             <Bell size={18} className="text-foreground" />
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-primary" />
+            {needsWater && <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-destructive" />}
           </button>
         </div>
 
@@ -87,10 +91,12 @@ const Dashboard = () => {
         >
           <div className="flex items-center justify-between">
             <div className="flex-1">
-              <h2 className="text-xl font-bold text-dark-card-foreground mb-1">{cropName}</h2>
+              <div className="flex items-center gap-2 mb-1">
+                <h2 className="text-xl font-bold text-dark-card-foreground">{cropName}</h2>
+              </div>
               <div className="flex items-center gap-2 mb-3">
                 <span className="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded-full font-medium">
-                  {loading ? "Loading..." : t("healthy")}
+                  {loading ? "..." : t("healthy")}
                 </span>
                 {data.pump != null && (
                   <span className={`text-xs px-2 py-0.5 rounded-full font-medium flex items-center gap-1 ${
@@ -114,6 +120,14 @@ const Dashboard = () => {
               style={{ width: `${data.moisture ?? 0}%` }}
             />
           </div>
+          {/* Change Crop Button */}
+          <button
+            onClick={(e) => { e.stopPropagation(); navigate("/select-crop"); }}
+            className="mt-3 flex items-center gap-1.5 text-xs text-primary font-medium bg-primary/10 px-3 py-1.5 rounded-lg hover:bg-primary/20 transition-colors"
+          >
+            <RefreshCw size={12} />
+            {t("change_crop")}
+          </button>
         </div>
 
         {/* Quick Stats */}
@@ -171,9 +185,9 @@ const Dashboard = () => {
           </div>
           <div className="space-y-3">
             {[
-              { action: "Watered plant", time: "3 days ago", date: "10.02" },
-              { action: "Added fertilizer", time: "5 days ago", date: "19.02" },
-              { action: "Adjusted light", time: "1 week ago", date: "17.03" },
+              { action: t("watered_plant"), time: "3d", date: "10.02" },
+              { action: t("added_fertilizer"), time: "5d", date: "19.02" },
+              { action: t("adjusted_light"), time: "1w", date: "17.03" },
             ].map((a, i) => (
               <div key={i} className="flex items-center gap-3 bg-card rounded-xl p-3 border border-border">
                 <div className="w-8 h-8 rounded-full bg-accent flex items-center justify-center">
