@@ -4,6 +4,7 @@ import MobileLayout from "@/components/MobileLayout";
 import BottomNav from "@/components/BottomNav";
 import { ArrowLeft, Droplets, Leaf, Sun } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { useLanguage } from "@/hooks/use-language";
 
 const months = ["JAN", "FEB", "MAR"];
 
@@ -22,17 +23,17 @@ const chartData: Record<string, { date: string; value: number }[]> = {
   ],
 };
 
-const logs = [
-  { icon: Droplets, action: "Watered plant", date: "10.02", change: "+15% moisture" },
-  { icon: Leaf, action: "Added fertilizer", date: "08.02", change: "NPK balanced" },
-  { icon: Sun, action: "Light adjusted", date: "05.02", change: "+2h exposure" },
-  { icon: Droplets, action: "Watered plant", date: "01.02", change: "+20% moisture" },
-  { icon: Leaf, action: "Fertilizer added", date: "28.01", change: "Nitrogen boost" },
-];
-
 const HistoryScreen = () => {
   const navigate = useNavigate();
   const [selectedMonth, setSelectedMonth] = useState("FEB");
+  const { t } = useLanguage();
+
+  const logs = [
+    { icon: Droplets, action: t("watered_plant"), date: "10.02", change: "+15%" },
+    { icon: Leaf, action: t("added_fertilizer"), date: "08.02", change: "NPK" },
+    { icon: Sun, action: t("adjusted_light"), date: "05.02", change: "+2h" },
+    { icon: Droplets, action: t("watered_plant"), date: "01.02", change: "+20%" },
+  ];
 
   return (
     <MobileLayout>
@@ -41,10 +42,9 @@ const HistoryScreen = () => {
           <button onClick={() => navigate(-1)} className="w-9 h-9 rounded-full bg-card flex items-center justify-center border border-border">
             <ArrowLeft size={18} />
           </button>
-          <h1 className="text-lg font-bold text-foreground">History</h1>
+          <h1 className="text-lg font-bold text-foreground">{t("history")}</h1>
         </div>
 
-        {/* Month Filter */}
         <div className="flex gap-2 px-5 mb-5">
           {months.map((m) => (
             <button
@@ -61,9 +61,8 @@ const HistoryScreen = () => {
           ))}
         </div>
 
-        {/* Chart */}
         <div className="px-5 mb-6">
-          <h3 className="font-semibold text-foreground mb-3">Moisture Over Time</h3>
+          <h3 className="font-semibold text-foreground mb-3">{t("moisture_chart")}</h3>
           <div className="bg-card rounded-xl p-4 border border-border">
             <ResponsiveContainer width="100%" height={180}>
               <LineChart data={chartData[selectedMonth]}>
@@ -77,9 +76,8 @@ const HistoryScreen = () => {
           </div>
         </div>
 
-        {/* Logs */}
         <div className="px-5">
-          <h3 className="font-semibold text-foreground mb-3">Activity Log</h3>
+          <h3 className="font-semibold text-foreground mb-3">{t("activity_log")}</h3>
           <div className="space-y-2">
             {logs.map((log, i) => {
               const Icon = log.icon;

@@ -9,21 +9,13 @@ import { getCropById } from "@/lib/crops";
 import plantFallback from "@/assets/plant-ficus.png";
 
 const moistureData = [
-  { date: "1.01", value: 55 },
-  { date: "7.01", value: 60 },
-  { date: "14.01", value: 52 },
-  { date: "21.01", value: 68 },
-  { date: "1.02", value: 65 },
-  { date: "7.02", value: 72 },
+  { date: "1.01", value: 55 }, { date: "7.01", value: 60 }, { date: "14.01", value: 52 },
+  { date: "21.01", value: 68 }, { date: "1.02", value: 65 }, { date: "7.02", value: 72 },
 ];
 
 const heightData = [
-  { date: "1.01", value: 14.2 },
-  { date: "7.01", value: 15.6 },
-  { date: "14.01", value: 16.8 },
-  { date: "21.01", value: 18.6 },
-  { date: "1.02", value: 19.2 },
-  { date: "7.02", value: 20.2 },
+  { date: "1.01", value: 14.2 }, { date: "7.01", value: 15.6 }, { date: "14.01", value: 16.8 },
+  { date: "21.01", value: 18.6 }, { date: "1.02", value: 19.2 }, { date: "7.02", value: 20.2 },
 ];
 
 const PlantDetails = () => {
@@ -33,14 +25,14 @@ const PlantDetails = () => {
 
   const cropId = data.type || localStorage.getItem("selectedCrop") || "";
   const crop = getCropById(cropId);
-  const cropName = crop ? t(crop.nameKey) : "Plant";
+  const cropName = crop ? t(crop.nameKey) : t("plant");
   const cropImage = crop?.image || plantFallback;
 
   const indicators = [
     { icon: Droplets, label: t("moisture"), value: data.moisture != null ? `${data.moisture}%` : "--", color: "text-info" },
     { icon: Thermometer, label: t("temperature"), value: data.temperature != null ? `${data.temperature}°C` : "--", color: "text-destructive" },
     { icon: Wind, label: t("humidity"), value: data.humidity != null ? `${data.humidity}%` : "--", color: "text-primary" },
-    { icon: TrendingUp, label: "Height", value: "18.6 cm", color: "text-accent-foreground" },
+    { icon: TrendingUp, label: t("height"), value: "18.6 cm", color: "text-accent-foreground" },
   ];
 
   return (
@@ -73,7 +65,7 @@ const PlantDetails = () => {
         </div>
 
         <div className="px-5 mb-6">
-          <h3 className="font-semibold text-foreground mb-3">{t("moisture")}</h3>
+          <h3 className="font-semibold text-foreground mb-3">{t("moisture_over_time")}</h3>
           <div className="bg-card rounded-xl p-4 border border-border">
             <ResponsiveContainer width="100%" height={160}>
               <LineChart data={moistureData}>
@@ -88,7 +80,7 @@ const PlantDetails = () => {
         </div>
 
         <div className="px-5">
-          <h3 className="font-semibold text-foreground mb-3">Height</h3>
+          <h3 className="font-semibold text-foreground mb-3">{t("height")}</h3>
           <div className="bg-card rounded-xl p-4 border border-border">
             <ResponsiveContainer width="100%" height={160}>
               <LineChart data={heightData}>
