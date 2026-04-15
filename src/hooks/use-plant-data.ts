@@ -7,6 +7,8 @@ export interface PlantData {
   temperature: number | null;
   humidity: number | null;
   pump: string | null;
+  type: string | null;
+  threshold: number | null;
   location?: { latitude: number; longitude: number } | null;
 }
 
@@ -15,6 +17,8 @@ const defaultData: PlantData = {
   temperature: null,
   humidity: null,
   pump: null,
+  type: null,
+  threshold: null,
   location: null,
 };
 
@@ -35,6 +39,8 @@ export function usePlantData() {
             temperature: val.temperature ?? null,
             humidity: val.humidity ?? null,
             pump: val.pump ?? null,
+            type: val.type ?? null,
+            threshold: val.threshold ?? null,
             location: val.location ?? null,
           });
         }
