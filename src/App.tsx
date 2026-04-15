@@ -12,6 +12,7 @@ import Dashboard from "./pages/Dashboard";
 import PlantDetails from "./pages/PlantDetails";
 import NotificationsScreen from "./pages/NotificationsScreen";
 import ActionsScreen from "./pages/ActionsScreen";
+import CropSelectScreen from "./pages/CropSelectScreen";
 import DeviceStatus from "./pages/DeviceStatus";
 import HistoryScreen from "./pages/HistoryScreen";
 import SettingsScreen from "./pages/SettingsScreen";
@@ -65,6 +66,7 @@ const App = () => {
             <Route path="/" element={<SplashScreen />} />
             <Route path="/login" element={<LoginScreen />} />
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/select-crop" element={<CropSelectScreen />} />
             <Route path="/plant-details" element={<PlantDetails />} />
             <Route path="/notifications" element={<NotificationsScreen />} />
             <Route path="/actions" element={<ActionsScreen />} />
