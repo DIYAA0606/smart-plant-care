@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { ref, set } from "firebase/database";
 import { db } from "@/lib/firebase";
+import { Geolocation } from "@capacitor/geolocation";
 
 interface LocationState {
   latitude: number | null;
@@ -18,31 +19,39 @@ export function useLocation() {
   });
 
   useEffect(() => {
-    if (!navigator.geolocation) {
-      setState((s) => ({ ...s, error: "Geolocation not supported", loading: false }));
-      return;
-    }
+    const getLocation = async () => {
+      try {
+        // 🔥 STEP 1: REQUEST PERMISSION
+        const permission = await Geolocation.requestPermissions();
 
-    navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        const { latitude, longitude } = position.coords;
+        if (permission.location !== "granted") {
+          throw new Error("Location permission denied");
+        }
+
+        // 🔥 STEP 2: GET LOCATION
+        const position = await Geolocation.getCurrentPosition();
+
+        const latitude = position.coords.latitude;
+        const longitude = position.coords.longitude;
+
         setState({ latitude, longitude, error: null, loading: false });
 
-        try {
-          await set(ref(db, "/plant/location"), { latitude, longitude });
-        } catch (err) {
-          console.error("Failed to save location:", err);
-        }
-      },
-      (err) => {
-        let message = "Location unavailable";
-        if (err.code === 1) message = "Location permission denied";
-        else if (err.code === 2) message = "Location unavailable";
-        else if (err.code === 3) message = "Location request timed out";
-        setState({ latitude: null, longitude: null, error: message, loading: false });
-      },
-      { enableHighAccuracy: true, timeout: 10000 }
-    );
+        // 🔥 STEP 3: SAVE TO FIREBASE
+        await set(ref(db, "/plant/location"), { latitude, longitude });
+
+      } catch (err: any) {
+        console.error("Location error:", err);
+
+        setState({
+          latitude: null,
+          longitude: null,
+          error: err.message || "Location unavailable",
+          loading: false,
+        });
+      }
+    };
+
+    getLocation();
   }, []);
 
   return state;

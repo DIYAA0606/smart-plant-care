@@ -9,8 +9,31 @@ import { useLanguage } from "@/hooks/use-language";
 import { getCropById } from "@/lib/crops";
 import plantFallback from "@/assets/plant-ficus.png";
 import logo from "@/assets/smartgrow-logo.png";
+import { db, ref, set } from "@/firebase";
+import { useEffect, useState } from "react";
 
 const Dashboard = () => {
+  
+  
+  const checkRain = async (lat, lon) => {
+    
+  try {
+    const API_KEY = "4415e0577b67054c93de0183d3e7307b";
+
+    const res = await fetch(
+      `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${API_KEY}`
+    );
+
+    const data = await res.json();
+
+    console.log("Weather:", data);
+
+    return data.weather[0].main === "Rain";
+  } catch (err) {
+    console.log("Weather error:", err);
+    return false;
+  }
+};
   const navigate = useNavigate();
   const userName = localStorage.getItem("userName") || "User";
   const { data, loading, error } = usePlantData();
@@ -32,6 +55,30 @@ const Dashboard = () => {
   ];
 
   const pumpIsOn = data.pump === "ON";
+  const [isRaining, setIsRaining] = useState(false);
+  // 🌱 AUTO PUMP CONTROL
+useEffect(() => {
+  if (data.moisture == null || !location.latitude || !location.longitude) return;
+
+  const runLogic = async () => {
+    const rain = await checkRain(location.latitude, location.longitude);
+    setIsRaining(rain);
+
+    if (data.moisture < threshold && !rain) {
+      if (data.pump !== "ON") {
+        console.log("AUTO → Turning pump ON");
+        set(ref(db, "plant/pump"), "ON");
+      }
+    } else {
+      if (data.pump !== "OFF") {
+        console.log("AUTO → Turning pump OFF");
+        set(ref(db, "plant/pump"), "OFF");
+      }
+    }
+  };
+
+  runLogic();
+}, [data.moisture, location.latitude, location.longitude]);
 
   return (
     <MobileLayout>
@@ -75,7 +122,10 @@ const Dashboard = () => {
             )}
             <div>
               <p className="text-sm font-semibold text-foreground">
-                {needsWater ? t("water_required") : t("no_water_needed")}
+               {needsWater ? t("water_required") : t("no_water_needed")}
+<span className="text-[10px] text-muted-foreground block">
+  Auto mode active (rain + moisture based)
+</span>
               </p>
               <p className="text-xs text-muted-foreground">
                 {needsWater ? t("moisture_low") : t("moisture_ok")} ({data.moisture}% / {threshold}%)
@@ -164,6 +214,11 @@ const Dashboard = () => {
             </p>
           )}
         </div>
+        {isRaining && (
+  <div className="bg-info/10 border border-info/30 rounded-xl px-4 py-2 text-xs text-info mb-4">
+    🌧️ Rain detected — irrigation paused
+  </div>
+)}
 
         {/* Action Button */}
         <Button

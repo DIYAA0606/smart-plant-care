@@ -6,6 +6,7 @@ import { Switch } from "@/components/ui/switch";
 import { useState } from "react";
 import { useLanguage } from "@/hooks/use-language";
 import { Language } from "@/lib/i18n";
+import { auth } from "@/lib/firebase";
 
 const LANGUAGES: { code: Language; label: string }[] = [
   { code: "en", label: "English" },
@@ -14,6 +15,7 @@ const LANGUAGES: { code: Language; label: string }[] = [
 ];
 
 const SettingsScreen = () => {
+  const user = auth.currentUser;
   const navigate = useNavigate();
   const [notifEnabled, setNotifEnabled] = useState(true);
   const userName = localStorage.getItem("userName") || "User";
@@ -45,7 +47,7 @@ const SettingsScreen = () => {
             </div>
             <div className="flex-1">
               <p className="font-semibold text-foreground">{userName}</p>
-              <p className="text-xs text-muted-foreground">user@example.com</p>
+              <p className="text-xs text-muted-foreground">{user?.email || "No email"}</p>
             </div>
             <ChevronRight size={16} className="text-muted-foreground" />
           </div>
