@@ -28,7 +28,7 @@ const LoginScreen = () => {
     }
     localStorage.setItem("isLoggedIn", "true");
     localStorage.setItem("userName", name || "User");
-    navigate("/dashboard", { replace: true });
+    navigate("/select-crop", { replace: true });
   };
 
   return (
