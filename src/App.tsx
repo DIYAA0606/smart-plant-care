@@ -17,13 +17,19 @@ import DeviceStatus from "./pages/DeviceStatus";
 import HistoryScreen from "./pages/HistoryScreen";
 import SettingsScreen from "./pages/SettingsScreen";
 import NotFound from "./pages/NotFound";
-import { onAuthStateChanged, User } from "firebase/auth";
-import { auth } from "@/lib/firebase";
+// import { onAuthStateChanged, User } from "firebase/auth";
+// import { auth } from "@/lib/firebase";
 
 const queryClient = new QueryClient();
 
 const getLocation = async () => {
   try {
+    // ✅ ONLY run on real mobile device
+    if (!(window as any).Capacitor?.isNativePlatform()) {
+      console.log("Skipping location (web)");
+      return;
+    }
+
     const permission = await Geolocation.requestPermissions();
 
     if (permission.location !== "granted") {
@@ -42,24 +48,26 @@ const getLocation = async () => {
       lat,
       lng,
     });
+
   } catch (error) {
     console.log("Location error:", error);
   }
 };
 
 const App = () => {
-  const [user, setUser] = useState<User | null>(null);
-  const [authLoading, setAuthLoading] = useState(true);
-
+  const [isLoggedIn, setIsLoggedIn] = useState(
+  localStorage.getItem("isLoggedIn") === "true"
+  );
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      console.log("Auth user:", currentUser);
-      setUser(currentUser);
-      setAuthLoading(false);
-    });
+  const checkLogin = () => {
+    setIsLoggedIn(localStorage.getItem("isLoggedIn") === "true");
+  };
 
-    return () => unsubscribe();
-  }, []);
+  window.addEventListener("storage", checkLogin);
+
+  return () => window.removeEventListener("storage", checkLogin);
+}, []);
+  
 
   useEffect(() => {
     const plantRef = ref(db, "plant");
@@ -75,9 +83,6 @@ const App = () => {
     return () => unsubscribe();
   }, []);
 
-  if (authLoading) {
-    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
-  }
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -86,56 +91,60 @@ const App = () => {
         <Sonner />
         <BrowserRouter>
           <Routes>
-            <Route path="/" element={<Navigate to={user ? "/dashboard" : "/login"} replace />} />
 
-            <Route
-              path="/login"
-              element={!user ? <LoginScreen /> : <Navigate to="/dashboard" replace />}
-            />
+  <Route
+    path="/"
+    element={<Navigate to={isLoggedIn ? "/dashboard" : "/login"} />}
+  />
 
-            <Route
-              path="/dashboard"
-              element={user ? <Dashboard /> : <Navigate to="/login" replace />}
-            />
+  <Route
+    path="/login"
+    element={!isLoggedIn ? <LoginScreen /> : <Navigate to="/dashboard" />}
+  />
 
-            <Route
-              path="/select-crop"
-              element={user ? <CropSelectScreen /> : <Navigate to="/login" replace />}
-            />
+  <Route
+    path="/dashboard"
+    element={isLoggedIn ? <Dashboard /> : <Navigate to="/login" />}
+  />
 
-            <Route
-              path="/plant-details"
-              element={user ? <PlantDetails /> : <Navigate to="/login" replace />}
-            />
+  <Route
+    path="/select-crop"
+    element={isLoggedIn ? <CropSelectScreen /> : <Navigate to="/login" />}
+  />
 
-            <Route
-              path="/notifications"
-              element={user ? <NotificationsScreen /> : <Navigate to="/login" replace />}
-            />
+  <Route
+    path="/plant-details"
+    element={isLoggedIn ? <PlantDetails /> : <Navigate to="/login" />}
+  />
 
-            <Route
-              path="/actions"
-              element={user ? <ActionsScreen /> : <Navigate to="/login" replace />}
-            />
+  <Route
+    path="/notifications"
+    element={isLoggedIn ? <NotificationsScreen /> : <Navigate to="/login" />}
+  />
 
-            <Route
-              path="/device-status"
-              element={user ? <DeviceStatus /> : <Navigate to="/login" replace />}
-            />
+  <Route
+    path="/actions"
+    element={isLoggedIn ? <ActionsScreen /> : <Navigate to="/login" />}
+  />
 
-            <Route
-              path="/history"
-              element={user ? <HistoryScreen /> : <Navigate to="/login" replace />}
-            />
+  <Route
+    path="/device-status"
+    element={isLoggedIn ? <DeviceStatus /> : <Navigate to="/login" />}
+  />
 
-            <Route
-              path="/settings"
-              element={user ? <SettingsScreen /> : <Navigate to="/login" replace />}
-            />
+  <Route
+    path="/history"
+    element={isLoggedIn ? <HistoryScreen /> : <Navigate to="/login" />}
+  />
 
-            <Route path="/splash" element={<SplashScreen />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+  <Route
+    path="/settings"
+    element={isLoggedIn ? <SettingsScreen /> : <Navigate to="/login" />}
+  />
+
+  <Route path="*" element={<NotFound />} />
+
+</Routes>
         </BrowserRouter>
       </TooltipProvider>
     </QueryClientProvider>

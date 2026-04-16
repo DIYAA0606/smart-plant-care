@@ -6,10 +6,8 @@ import { Input } from "@/components/ui/input";
 import logoImg from "@/assets/logo.png";
 import { Eye, EyeOff } from "lucide-react";
 import { useLanguage } from "@/hooks/use-language";
-import { onAuthStateChanged, signInWithRedirect } from "firebase/auth";
-import { auth, provider } from "@/lib/firebase";
-import { signInWithPopup } from "firebase/auth";
-import { getRedirectResult } from "firebase/auth";
+
+
 
 const LoginScreen = () => {
   const isMobile = /Android|iPhone/i.test(navigator.userAgent);
@@ -24,66 +22,22 @@ const LoginScreen = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
 
-  const handleGoogleLogin = async () => {
-    try {
-      if (isMobile) {
-        // 🔥 Mobile → use redirect
-        await signInWithRedirect(auth, provider);
-      } else {
-        // 🔥 Laptop → use popup
-        const result = await signInWithPopup(auth, provider);
-      }
-    } catch (err) {
-      console.error("Google login error:", err);
-      setError("Google sign-in failed");
-    }
-  };
-  useEffect(() => {
-  const checkRedirect = async () => {
-    try {
-      const result = await getRedirectResult(auth);
+  const handleSubmit = (e) => {
+  e.preventDefault();
+  setError("");
 
-      if (result?.user) {
-        console.log("Redirect user:", result.user);
-        navigate("/dashboard", { replace: true });
-      }
-    } catch (error) {
-      console.error("Redirect error:", error);
-    }
-  };
+  if (!email || !password) {
+    setError("Please fill all fields");
+    return;
+  }
 
-  checkRedirect();
-}, []);
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        console.log("User detected:", user);
-        localStorage.setItem("userName", user.displayName || "User");
-        navigate("/dashboard", { replace: true });
-      }
-    });
-
-    return () => unsubscribe();
-  }, [navigate]);
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-
-    if (!email || !password) {
-      setError("Please fill in all fields");
-      return;
-    }
-
-    if (isSignup && !name) {
-      setError("Please enter your name");
-      return;
-    }
-
+  // ✅ SAVE LOGIN
+  localStorage.setItem("isLoggedIn", "true");
     localStorage.setItem("userName", name || "User");
-    navigate("/select-crop", { replace: true });
-  };
+    localStorage.setItem("userEmail", email);
+
+  window.location.href = "/dashboard";
+};
 
   return (
     <MobileLayout>
@@ -219,13 +173,7 @@ const LoginScreen = () => {
             )}
           </div>
 
-          <button
-            type="button"
-            onClick={handleGoogleLogin}
-            className="w-full mt-2 bg-white text-black py-3 rounded-xl font-medium"
-          >
-            Sign in with Google
-          </button>
+          
 
           <Button type="submit" className="h-12 rounded-xl text-base font-semibold mt-2">
             {isSignup ? "Sign Up" : "Login"}

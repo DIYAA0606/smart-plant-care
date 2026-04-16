@@ -47,7 +47,9 @@ const SettingsScreen = () => {
             </div>
             <div className="flex-1">
               <p className="font-semibold text-foreground">{userName}</p>
-              <p className="text-xs text-muted-foreground">{user?.email || "No email"}</p>
+              <p className="text-xs text-muted-foreground">
+  {localStorage.getItem("userEmail") || "No email"}
+</p>
             </div>
             <ChevronRight size={16} className="text-muted-foreground" />
           </div>
@@ -119,6 +121,18 @@ const SettingsScreen = () => {
             </div>
             <ChevronRight size={16} className="text-muted-foreground" />
           </button>
+          <button
+  onClick={() => {
+              localStorage.removeItem("isLoggedIn");
+               window.location.href = "/login";
+              localStorage.removeItem("userName");
+              localStorage.removeItem("userEmail");
+    window.location.href = "/login";
+  }}
+  className="w-full mt-4 bg-red-500 text-white py-3 rounded-xl"
+>
+  Logout
+</button>
 
           {/* Privacy */}
           <div className="bg-card rounded-2xl p-4 border border-border flex items-center justify-between">
@@ -131,7 +145,7 @@ const SettingsScreen = () => {
             <ChevronRight size={16} className="text-muted-foreground" />
           </div>
 
-          {/* Logout */}
+          {/* Logout
           <button
             onClick={logout}
             className="w-full bg-destructive/10 rounded-2xl p-4 flex items-center gap-3"
@@ -140,7 +154,7 @@ const SettingsScreen = () => {
               <LogOut size={16} className="text-destructive" />
             </div>
             <span className="text-sm font-medium text-destructive">{t("logout")}</span>
-          </button>
+          </button> */}
         </div>
       </div>
       <BottomNav />
