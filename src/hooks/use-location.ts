@@ -17,9 +17,33 @@ export function useLocation() {
     error: null,
     loading: true,
   });
+  const getPlaceName = async (lat: number, lng: number) => {
+  try {
+    const res = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`
+    );
+
+    const data = await res.json();
+
+    const place =
+      data.address.city ||
+      data.address.town ||
+      data.address.village ||
+      "Unknown";
+
+    await set(ref(db, "/plant/place"), place);
+
+  } catch (err) {
+    console.log("Place error:", err);
+  }
+};
 
   useEffect(() => {
     const getLocation = async () => {
+      if (!(window as any).Capacitor?.isNativePlatform()) {
+  console.log("Skipping location (web)");
+  return;
+}
       try {
         // 🔥 STEP 1: REQUEST PERMISSION
         const permission = await Geolocation.requestPermissions();
@@ -33,6 +57,7 @@ export function useLocation() {
 
         const latitude = position.coords.latitude;
         const longitude = position.coords.longitude;
+        getPlaceName(latitude, longitude);
 
         setState({ latitude, longitude, error: null, loading: false });
 
@@ -52,6 +77,7 @@ export function useLocation() {
     };
 
     getLocation();
+    
   }, []);
 
   return state;

@@ -9,12 +9,35 @@ import { useLanguage } from "@/hooks/use-language";
 import { getCropById } from "@/lib/crops";
 import plantFallback from "@/assets/plant-ficus.png";
 import logo from "@/assets/smartgrow-logo.png";
-import { db, ref, set } from "@/firebase";
+// import { db, ref, set } from "@/firebase";
+// import { useEffect, useState } from "react";
+import { ref, onValue, set } from "firebase/database";
+import { db } from "@/lib/firebase";
 import { useEffect, useState } from "react";
 
 const Dashboard = () => {
+  const [place, setPlace] = useState("");
   
-  
+  const [history, setHistory] = useState([]);
+useEffect(() => {
+  const placeRef = ref(db, "plant/place");
+
+  onValue(placeRef, (snapshot) => {
+    const val = snapshot.val();
+    if (val) setPlace(val);
+  });
+}, []);
+useEffect(() => {
+  const historyRef = ref(db, "history");
+
+  onValue(historyRef, (snapshot) => {
+    const data = snapshot.val();
+    if (!data) return;
+
+    const arr = Object.values(data);
+    setHistory(arr.reverse());
+  });
+}, []);
   const checkRain = async (lat, lon) => {
     
   try {
@@ -210,7 +233,7 @@ useEffect(() => {
             <p className="text-xs text-destructive mt-1.5">{location.error}</p>
           ) : (
             <p className="text-xs text-muted-foreground mt-1.5">
-              📍 {location.latitude?.toFixed(4)}, {location.longitude?.toFixed(4)}
+              📍 {place || `${location.latitude?.toFixed(4)}, ${location.longitude?.toFixed(4)}`}
             </p>
           )}
         </div>
@@ -239,20 +262,24 @@ useEffect(() => {
             </button>
           </div>
           <div className="space-y-3">
-            {[
-              { action: t("watered_plant"), time: "3d", date: "10.02" },
-              { action: t("added_fertilizer"), time: "5d", date: "19.02" },
-              { action: t("adjusted_light"), time: "1w", date: "17.03" },
-            ].map((a, i) => (
+            {history.length === 0 && (
+  <p className="text-xs text-muted-foreground">No activity yet</p>
+)}
+            {history.slice(0, 5).map((item, i) => (
               <div key={i} className="flex items-center gap-3 bg-card rounded-xl p-3 border border-border">
                 <div className="w-8 h-8 rounded-full bg-accent flex items-center justify-center">
                   <Droplets size={14} className="text-primary" />
                 </div>
                 <div className="flex-1">
-                  <p className="text-sm font-medium text-foreground">{a.action}</p>
-                  <p className="text-xs text-muted-foreground">{a.time}</p>
+                  <p className="text-sm font-medium text-foreground">
+  {item.moisture && `Moisture: ${item.moisture}%`}
+  {item.moisture && item.temperature && " | "}
+  {item.temperature && `Temp: ${item.temperature}°C`}
+</p>
                 </div>
-                <span className="text-xs text-muted-foreground">{a.date}</span>
+                <p className="text-xs text-muted-foreground">
+  {new Date(item.timestamp).toLocaleString()}
+</p>
               </div>
             ))}
           </div>

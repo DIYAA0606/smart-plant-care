@@ -11,6 +11,7 @@ import LoginScreen from "./pages/LoginScreen";
 import Dashboard from "./pages/Dashboard";
 import PlantDetails from "./pages/PlantDetails";
 import NotificationsScreen from "./pages/NotificationsScreen";
+import { push } from "firebase/database";
 import ActionsScreen from "./pages/ActionsScreen";
 import CropSelectScreen from "./pages/CropSelectScreen";
 import DeviceStatus from "./pages/DeviceStatus";
@@ -21,7 +22,58 @@ import NotFound from "./pages/NotFound";
 // import { auth } from "@/lib/firebase";
 
 const queryClient = new QueryClient();
+const fetchWeather = async (lat, lng) => {
+  try {
+    const API_KEY = "4415e0577b67054c93de0183d3e7307b";
 
+    const res = await fetch(
+      `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lng}&appid=${API_KEY}&units=metric`
+    );
+
+    const data = await res.json();
+
+    const temp = data.main.temp;
+    const humidity = data.main.humidity;
+
+    console.log("Temp:", temp);
+    console.log("Humidity:", humidity);
+
+    // 🔥 STORE IN FIREBASE
+    await set(ref(db, "plant/temperature"), temp);
+    await set(ref(db, "plant/humidity"), humidity);
+    console.log("PUSHING WEATHER TO HISTORY...");
+    await push(ref(db, "history"), {
+  temperature: temp,
+  humidity: humidity,
+  timestamp: Date.now(),
+});
+
+  } catch (err) {
+    console.log("Weather error:", err);
+  }
+};
+const getPlaceName = async (lat, lng) => {
+  try {
+    const res = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`
+    );
+
+    const data = await res.json();
+
+    const place =
+      data.address.city ||
+      data.address.town ||
+      data.address.village ||
+      "Unknown";
+
+    console.log("Place:", place);
+
+    await set(ref(db, "plant/place"), place);
+
+  } catch (err) {
+    console.log("Place error:", err);
+  }
+};
 const getLocation = async () => {
   try {
     // ✅ ONLY run on real mobile device
@@ -29,7 +81,7 @@ const getLocation = async () => {
       console.log("Skipping location (web)");
       return;
     }
-
+    
     const permission = await Geolocation.requestPermissions();
 
     if (permission.location !== "granted") {
@@ -40,6 +92,8 @@ const getLocation = async () => {
 
     const lat = position.coords.latitude;
     const lng = position.coords.longitude;
+    fetchWeather(lat, lng);
+    getPlaceName(lat, lng); 
 
     console.log("LAT:", lat);
     console.log("LNG:", lng);
@@ -66,7 +120,8 @@ const App = () => {
   window.addEventListener("storage", checkLogin);
 
   return () => window.removeEventListener("storage", checkLogin);
-}, []);
+  }, []);
+  
   
 
   useEffect(() => {
