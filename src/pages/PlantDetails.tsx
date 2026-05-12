@@ -20,7 +20,7 @@ const moistureData = [
 // ];
 
 const PlantDetails = () => {
-  const historyData = useHistory(); // outside component ❌
+  const { history: historyData } = useHistory();
   const navigate = useNavigate();
   const { data } = usePlantData();
   const { t } = useLanguage();
