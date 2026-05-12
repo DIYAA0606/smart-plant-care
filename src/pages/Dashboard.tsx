@@ -11,36 +11,20 @@ import plantFallback from "@/assets/plant-ficus.png";
 import logo from "@/assets/smartgrow-logo.png";
 // import { db, ref, set } from "@/firebase";
 // import { useEffect, useState } from "react";
-import { ref, onValue, set } from "firebase/database";
-import { db } from "@/lib/firebase";
 import { useEffect, useState } from "react";
+import { useHistory } from "@/hooks/use-history";
+import { Network } from "@capacitor/network";
 
 const Dashboard = () => {
-  const [place, setPlace] = useState("");
-  
-  const [history, setHistory] = useState([]);
-useEffect(() => {
-  const placeRef = ref(db, "plant/place");
-
-  onValue(placeRef, (snapshot) => {
-    const val = snapshot.val();
-    if (val) setPlace(val);
-  });
-}, []);
-useEffect(() => {
-  const historyRef = ref(db, "history");
-
-  onValue(historyRef, (snapshot) => {
-    const data = snapshot.val();
-    if (!data) return;
-
-    const arr = Object.values(data);
-    setHistory(arr.reverse());
-  });
-}, []);
+  const { rawHistory: history } = useHistory();
   const checkRain = async (lat, lon) => {
-    
   try {
+    const status = await Network.getStatus();
+    if (!status.connected) {
+      console.log("Skipping weather check: Offline");
+      return false;
+    }
+
     const API_KEY = "4415e0577b67054c93de0183d3e7307b";
 
     const res = await fetch(
@@ -59,7 +43,7 @@ useEffect(() => {
 };
   const navigate = useNavigate();
   const userName = localStorage.getItem("userName") || "User";
-  const { data, loading, error } = usePlantData();
+  const { data, loading, error, setPump } = usePlantData();
   const location = useLocation();
   const { t } = useLanguage();
 
@@ -90,12 +74,12 @@ useEffect(() => {
     if (data.moisture < threshold && !rain) {
       if (data.pump !== "ON") {
         console.log("AUTO → Turning pump ON");
-        set(ref(db, "plant/pump"), "ON");
+        setPump("ON");
       }
     } else {
       if (data.pump !== "OFF") {
         console.log("AUTO → Turning pump OFF");
-        set(ref(db, "plant/pump"), "OFF");
+        setPump("OFF");
       }
     }
   };
@@ -233,7 +217,7 @@ useEffect(() => {
             <p className="text-xs text-destructive mt-1.5">{location.error}</p>
           ) : (
             <p className="text-xs text-muted-foreground mt-1.5">
-              📍 {place || `${location.latitude?.toFixed(4)}, ${location.longitude?.toFixed(4)}`}
+              📍 {data.place || `${location.latitude?.toFixed(4)}, ${location.longitude?.toFixed(4)}`}
             </p>
           )}
         </div>

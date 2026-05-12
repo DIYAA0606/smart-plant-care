@@ -18,12 +18,20 @@ import DeviceStatus from "./pages/DeviceStatus";
 import HistoryScreen from "./pages/HistoryScreen";
 import SettingsScreen from "./pages/SettingsScreen";
 import NotFound from "./pages/NotFound";
+import { OfflineIndicator } from "./components/OfflineIndicator";
+import { Network } from "@capacitor/network";
+import { SyncQueue } from "./lib/sync-queue";
 // import { onAuthStateChanged, User } from "firebase/auth";
 // import { auth } from "@/lib/firebase";
 
 const queryClient = new QueryClient();
 const fetchWeather = async (lat, lng) => {
   try {
+    const status = await Network.getStatus();
+    if (!status.connected) {
+      console.log("Skipping weather fetch: Offline");
+      return;
+    }
     const API_KEY = "4415e0577b67054c93de0183d3e7307b";
 
     const res = await fetch(
@@ -54,6 +62,11 @@ const fetchWeather = async (lat, lng) => {
 };
 const getPlaceName = async (lat, lng) => {
   try {
+    const status = await Network.getStatus();
+    if (!status.connected) {
+      console.log("Skipping place name fetch: Offline");
+      return;
+    }
     const res = await fetch(
       `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`
     );
@@ -132,10 +145,26 @@ const App = () => {
       console.log("Firebase Data:", data);
     });
 
-    set(ref(db, "plant/pump"), "OFF");
-    getLocation();
+    const initApp = async () => {
+      const status = await Network.getStatus();
+      if (status.connected) {
+        set(ref(db, "plant/pump"), "OFF");
+        SyncQueue.processQueue();
+      }
+      getLocation();
+    };
+    initApp();
 
-    return () => unsubscribe();
+    const listener = Network.addListener("networkStatusChange", (status) => {
+      if (status.connected) {
+        SyncQueue.processQueue();
+      }
+    });
+
+    return () => {
+      unsubscribe();
+      listener.then((l) => l.remove());
+    };
   }, []);
 
 
@@ -144,6 +173,7 @@ const App = () => {
       <TooltipProvider>
         <Toaster />
         <Sonner />
+        <OfflineIndicator />
         <BrowserRouter>
           <Routes>
 

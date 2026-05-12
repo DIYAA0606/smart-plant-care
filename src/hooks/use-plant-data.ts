@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
 import { ref, onValue, set } from "firebase/database";
 import { db } from "@/lib/firebase";
+import { Preferences } from "@capacitor/preferences";
+import { Network } from "@capacitor/network";
+import { SyncQueue } from "@/lib/sync-queue";
 
 export interface PlantData {
   moisture: number | null;
@@ -10,6 +13,7 @@ export interface PlantData {
   type: string | null;
   threshold: number | null;
   location?: { latitude: number; longitude: number } | null;
+  place?: string | null;
 }
 
 const defaultData: PlantData = {
@@ -20,7 +24,10 @@ const defaultData: PlantData = {
   type: null,
   threshold: null,
   location: null,
+  place: null,
 };
+
+const CACHE_KEY = "plant_data_cache";
 
 export function usePlantData() {
   const [data, setData] = useState<PlantData>(defaultData);
@@ -28,13 +35,26 @@ export function usePlantData() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    const loadCache = async () => {
+      try {
+        const { value } = await Preferences.get({ key: CACHE_KEY });
+        if (value) {
+          setData(JSON.parse(value));
+          setLoading(false);
+        }
+      } catch (e) {
+        console.error("Failed to load cached plant data", e);
+      }
+    };
+    loadCache();
+
     const plantRef = ref(db, "/plant");
     const unsubscribe = onValue(
       plantRef,
       (snapshot) => {
         const val = snapshot.val();
         if (val) {
-          setData({
+          const newData = {
             moisture: val.moisture ?? null,
             temperature: val.temperature ?? null,
             humidity: val.humidity ?? null,
@@ -42,7 +62,10 @@ export function usePlantData() {
             type: val.type ?? null,
             threshold: val.threshold ?? null,
             location: val.location ?? null,
-          });
+            place: val.place ?? null,
+          };
+          setData(newData);
+          Preferences.set({ key: CACHE_KEY, value: JSON.stringify(newData) });
         }
         setLoading(false);
         setError(null);
@@ -59,7 +82,14 @@ export function usePlantData() {
 
   const setPump = async (status: "ON" | "OFF") => {
     try {
-      await set(ref(db, "/plant/pump"), status);
+      setData((prev) => ({ ...prev, pump: status }));
+
+      const netStatus = await Network.getStatus();
+      if (netStatus.connected) {
+        await set(ref(db, "/plant/pump"), status);
+      } else {
+        await SyncQueue.enqueueAction("PUMP_TOGGLE", { status });
+      }
     } catch (err) {
       console.error("Failed to update pump:", err);
       throw err;

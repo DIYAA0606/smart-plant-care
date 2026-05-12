@@ -7,6 +7,8 @@ import { useLanguage } from "@/hooks/use-language";
 import { set, ref } from "firebase/database";
 import { db } from "@/lib/firebase";
 import { Loader2, Sprout } from "lucide-react";
+import { Network } from "@capacitor/network";
+import { SyncQueue } from "@/lib/sync-queue";
 
 const CropSelectScreen = () => {
   const navigate = useNavigate();
@@ -21,8 +23,13 @@ const CropSelectScreen = () => {
 
     setSaving(true);
     try {
-      await set(ref(db, "/plant/type"), crop.id);
-      await set(ref(db, "/plant/threshold"), crop.threshold);
+      const netStatus = await Network.getStatus();
+      if (netStatus.connected) {
+        await set(ref(db, "/plant/type"), crop.id);
+        await set(ref(db, "/plant/threshold"), crop.threshold);
+      } else {
+        await SyncQueue.enqueueAction("CROP_SELECT", { type: crop.id, threshold: crop.threshold });
+      }
       localStorage.setItem("selectedCrop", crop.id);
       navigate("/dashboard", { replace: true });
     } catch (err) {
